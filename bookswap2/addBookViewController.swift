@@ -6,9 +6,11 @@
 //
 
 import UIKit
+import FirebaseFirestore
 
 class addBookViewController: UIViewController, UITextFieldDelegate {
 
+    let database = Firestore.firestore()
     @IBOutlet weak var addTitle:UITextField!
     @IBOutlet weak var addAuthor:UITextField!
     
@@ -17,10 +19,11 @@ class addBookViewController: UIViewController, UITextFieldDelegate {
         let newAuthor = addAuthor.text ?? ""
         
         if !newTitle.isEmpty && !newAuthor.isEmpty {
-            print("add book: \(String(describing:newTitle)), \(String(describing: newAuthor))")
+            saveBookData(title: newTitle, author: newAuthor)
+            print("add book: \(String(describing:newTitle)), \(String(describing: newAuthor)) SUCCESSFUL")
         }
         else{
-            print("failed to add book: missing arguments")
+            print("FAILED to add book: missing arguments")
         }
         
         /*
@@ -28,6 +31,12 @@ class addBookViewController: UIViewController, UITextFieldDelegate {
             "libraryViewController") as! libraryViewController
         self.navigationController?.pushViewController(storyboard, animated: true)
          */
+    }
+    
+    func saveBookData(title: String, author: String){
+        let docRef = database.document("publicbooks/\(title),\(author)")
+        docRef.setData(["title": title,
+                        "author": author])
     }
     
     override func viewDidLoad() {
