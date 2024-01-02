@@ -17,15 +17,15 @@ class homeViewController: UIViewController, UITableViewDataSource, UITableViewDe
     @IBOutlet var topicButtons:[UIButton]!
     
     let topics = ["textbooks", "chemistry", "history", "fiction", "idk"]
-    
-    var books: [Book] = [
-        Book(title: "Book 1", author: "Author 1", owner: User(name: "me", email: "me.com", location: "loc")),
-        Book(title: "Book 2", author: "Author 2", owner: User(name: "me", email: "me.com", location: "loc")),
-            // Add more books
-    ]
+    let db: Firestore = Firestore.firestore()
+    var books: [Book] = []
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        var booksCollection: CollectionReference = db.collection("publicbooks")
+        fetchFirstFiveBooks(booksCollection: booksCollection)
         
         // Do any additional setup after loading the view.
         exploreTableView.dataSource = self
@@ -37,7 +37,39 @@ class homeViewController: UIViewController, UITableViewDataSource, UITableViewDe
         
         let nib = UINib(nibName: "bookCell", bundle: nil)
         exploreTableView.register(nib, forCellReuseIdentifier: "bookCell")
+    }
+    
+    func fetchFirstFiveBooks(booksCollection: CollectionReference) {
+        booksCollection
+            .limit(to: 1)
+            .getDocuments { [weak self] (querySnapshot, error) in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Error getting documents: \(error)")
+                } else {
+                    guard let documents = querySnapshot?.documents else {
+                        print("No documents found")
+                        return
+                    }
+                    
+                    self.books = documents.compactMap { document in
+                        guard let title = document.data()["title"] as? String,
+                              let author = document.data()["author"] as? String else {
+                            return nil
+                        }
+                        return Book(title: title, author: author, owner: User(name: "me", email: "me.com", location: "here"))
+                    }
+                    
+                    // Process books array or perform any other action
+                    for book in self.books {
+                        print("Title: \(book.title), Author: \(book.author)")
+                    }
+                    DispatchQueue.main.async {
+                        self.exploreTableView.reloadData()
+                    }
 
+                }
+            }
     }
     
 
